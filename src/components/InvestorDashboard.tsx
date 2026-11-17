@@ -1,5 +1,5 @@
 import { useState, useEffect, type FC } from 'react'
-import { FaBuilding, FaHeart, FaRegHeart, FaEnvelope, FaSearch, FaSpinner, FaFilter } from 'react-icons/fa'
+import { FaBuilding, FaHeart, FaRegHeart, FaEnvelope, FaSearch, FaSpinner } from 'react-icons/fa'
 
 interface Startup {
   id: string
@@ -26,7 +26,7 @@ interface Props {
 
 const API = 'http://localhost:5000/api'
 
-export const InvestorDashboard: FC<Props> = ({ user, token }) => {
+export const InvestorDashboard: FC<Props> = ({ token }) => {
   const [startups, setStartups] = useState<Startup[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')

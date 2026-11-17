@@ -5,7 +5,7 @@ interface MessagingHubProps {
   currentUser?: any
 }
 
-export const MessagingHub: FC<MessagingHubProps> = ({ currentUser }) => {
+export const MessagingHub: FC<MessagingHubProps> = () => {
   const [activeChat, setActiveChat] = useState<'team' | 'mentor' | 'investor' | 'group'>('team')
   const [message, setMessage] = useState('')
 

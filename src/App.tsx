@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Navbar } from './components/Navbar'
 import { HeroSection } from './components/HeroSection'
-import { ProgramsSchemesSection } from './components/ProgramsSchemesSection'
-import { SectoralInsightsSection } from './components/SectoralInsightsSection'
-import { StartupsHeadlineSection } from './components/StartupsHeadlineSection'
+import { PlatformSections } from './components/PlatformSections'
 import { AuthModal } from './components/AuthModal'
 import { ForgotPasswordModal } from './components/ForgotPasswordModal'
 import { SearchModal } from './components/SearchModal'
@@ -137,16 +135,13 @@ export function App() {
     }
   }
 
-  const handleStartInKeralaClick = () => {
+  const handleHowItWorksClick = () => {
+    const scroll = () => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })
     if (workspaceView !== 'portal') {
       setWorkspaceView('portal')
-      setTimeout(() => {
-        const el = document.getElementById('programs-section')
-        if (el) el.scrollIntoView({ behavior: 'smooth' })
-      }, 100)
+      setTimeout(scroll, 100)
     } else {
-      const el = document.getElementById('programs-section')
-      if (el) el.scrollIntoView({ behavior: 'smooth' })
+      scroll()
     }
   }
 
@@ -237,6 +232,7 @@ export function App() {
                 <span>Startup Ideas Workspace</span>
               </button>
 
+              {currentUser?.role !== 'INVESTOR' && currentUser?.role !== 'ADMIN' && (
               <button
                 onClick={() => {
                   setWorkspaceView('matching')
@@ -251,6 +247,7 @@ export function App() {
                 <FaBolt className="text-xs text-amber-400" />
                 <span>Skill Matching</span>
               </button>
+              )}
 
               <button
                 onClick={() => {
@@ -288,6 +285,7 @@ export function App() {
                 <span>Team Workspace</span>
               </button>
 
+              {currentUser?.role !== 'INVESTOR' && (
               <button
                 onClick={() => {
                   setWorkspaceView('tasks')
@@ -302,6 +300,7 @@ export function App() {
                 <FaTasks className="text-xs text-violet-400" />
                 <span>Task Management</span>
               </button>
+              )}
 
               {(currentUser?.role === 'FOUNDER' || currentUser?.role === 'ADMIN') && (
                 <button
@@ -366,23 +365,15 @@ export function App() {
             {/* Section 1: Hero Section (Image 4) */}
             <HeroSection
               onSubmitIdea={handleSubmitIdeaClick}
-              onStartInKerala={handleStartInKeralaClick}
+              onStartInKerala={handleHowItWorksClick}
               onJoinCommunity={handleJoinCommunityClick}
             />
 
-            {/* Section 2: Startups Making Headline (Image 1) */}
-            <StartupsHeadlineSection
-              onExploreAllStartups={handleSubmitIdeaClick}
-            />
-
-            {/* Section 3: Sectoral Insights (Image 2) */}
-            <SectoralInsightsSection
-              onSelectSector={() => handleSubmitIdeaClick()}
-            />
-
-            {/* Section 4: Programs & Schemes (Image 3) */}
-            <ProgramsSchemesSection
-              onApplyScheme={() => handleSubmitIdeaClick()}
+            <PlatformSections
+              onGetStarted={() => {
+                setAuthModalMode('register')
+                setIsAuthModalOpen(true)
+              }}
             />
           </div>
         ) : (
@@ -405,7 +396,7 @@ export function App() {
                   window.scrollTo({ top: 0, behavior: 'smooth' })
                 }}
               />
-            ) : workspaceView === 'matching' ? (
+            ) : workspaceView === 'matching' && currentUser?.role !== 'INVESTOR' && currentUser?.role !== 'ADMIN' ? (
               <SkillMatchingHub
                 user={currentUser}
                 token={token || ''}
@@ -451,7 +442,7 @@ export function App() {
                   window.scrollTo({ top: 0, behavior: 'smooth' })
                 }}
               />
-            ) : workspaceView === 'tasks' ? (
+            ) : workspaceView === 'tasks' && currentUser?.role !== 'INVESTOR' ? (
               <TaskManagementHub
                 user={currentUser}
                 token={token || ''}
@@ -639,7 +630,7 @@ export function App() {
           <Logo size="md" />
           <div className="flex flex-wrap items-center justify-center gap-6 font-semibold">
             <button onClick={() => setWorkspaceView('portal')} className="hover:text-[#0b57d0] cursor-pointer">Home</button>
-            <button onClick={() => handleStartInKeralaClick()} className="hover:text-[#0b57d0] cursor-pointer">Programs</button>
+            <button onClick={() => handleHowItWorksClick()} className="hover:text-[#0b57d0] cursor-pointer">How It Works</button>
             <button onClick={() => handleSubmitIdeaClick()} className="hover:text-[#0b57d0] cursor-pointer">Startups</button>
             <button onClick={() => setIsNotificationsOpen(true)} className="hover:text-[#0b57d0] cursor-pointer">Announcements</button>
           </div>

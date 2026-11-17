@@ -56,7 +56,9 @@ export const ApplyToStartupModal: FC<ApplyToStartupModalProps> = ({
   const [skills, setSkills] = useState<string[]>([])
   const [newSkill, setNewSkill] = useState('')
   const [portfolioUrl, setPortfolioUrl] = useState('')
-  
+  const [investmentAmount, setInvestmentAmount] = useState('')
+  const isInvestor = user?.role === 'INVESTOR'
+
   // Resume / CV Upload States
   const [resumeUrl, setResumeUrl] = useState('')
   const [resumeFileName, setResumeFileName] = useState('')
@@ -113,7 +115,7 @@ export const ApplyToStartupModal: FC<ApplyToStartupModalProps> = ({
 
       // Fetch user applications to see if already applied
       if (token) {
-        fetch('http://localhost:5000/api/applications/my-applications', {
+        fetch(`http://localhost:5000/api/applications/${user.role === 'INVESTOR' ? 'investor/' : ''}my-applications`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((r) => r.json())
@@ -251,6 +253,46 @@ export const ApplyToStartupModal: FC<ApplyToStartupModalProps> = ({
       return
     }
 
+    if (isInvestor) {
+      const amount = Number(investmentAmount)
+      if (!pitchMessage.trim() || pitchMessage.trim().length < 20) {
+        setError('Please explain why you want to join (at least 20 characters).')
+        return
+      }
+      if (!Number.isFinite(amount) || amount <= 0) {
+        setError('Please enter a valid investing amount greater than 0.')
+        return
+      }
+      setLoading(true)
+      try {
+        const res = await fetch('http://localhost:5000/api/applications/investor', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            startupIdeaId: startupIdea.id,
+            pitchMessage,
+            investmentAmount: amount,
+          }),
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          if (data.application) setExistingApp(data.application)
+          throw new Error(data.error || 'Failed to submit application')
+        }
+        setSuccessMessage('Investor application submitted successfully to the founder!')
+        if (onApplicationSuccess) onApplicationSuccess(data.application)
+        setTimeout(() => onClose(), 1500)
+      } catch (err: any) {
+        setError(err.message || 'An error occurred while submitting application.')
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
     const finalRole = roleApplied === 'Other' ? customRole.trim() : roleApplied
 
     if (!finalRole) {
@@ -358,7 +400,11 @@ export const ApplyToStartupModal: FC<ApplyToStartupModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-600">
-                Applied for role: <strong>{existingApp.roleApplied}</strong>
+                {isInvestor ? (
+                  <>Investing amount: <strong>₹ {Number(existingApp.investmentAmount).toLocaleString("en-IN")}</strong></>
+                ) : (
+                  <>Applied for role: <strong>{existingApp.roleApplied}</strong></>
+                )}
               </p>
               {existingApp.founderFeedback && (
                 <div className="p-3 rounded-xl bg-white border border-blue-100 text-xs text-slate-700">
@@ -398,6 +444,7 @@ export const ApplyToStartupModal: FC<ApplyToStartupModalProps> = ({
           )}
 
           {/* Role Applied For */}
+          {!isInvestor && (
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
               <FaUserTie className="text-[#0b57d0]" />
@@ -428,6 +475,7 @@ export const ApplyToStartupModal: FC<ApplyToStartupModalProps> = ({
               />
             )}
           </div>
+          )}
 
           {/* Pitch Note / Cover Message */}
           <div className="space-y-1.5">
@@ -444,6 +492,25 @@ export const ApplyToStartupModal: FC<ApplyToStartupModalProps> = ({
             />
           </div>
 
+          {isInvestor && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-800 block">
+                Investing Amount (₹ INR) *
+              </label>
+              <input
+                type="number"
+                min="1"
+                step="any"
+                placeholder="e.g. 50000"
+                value={investmentAmount}
+                onChange={(e) => setInvestmentAmount(e.target.value)}
+                className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0b57d0]"
+                required
+              />
+            </div>
+          )}
+
+          {!isInvestor && (<>
           {/* Weekly Hours Availability */}
           <div className="space-y-2 p-4 rounded-2xl bg-blue-50/60 border border-blue-100">
             <div className="flex items-center justify-between text-xs font-bold text-slate-900">
@@ -532,7 +599,10 @@ export const ApplyToStartupModal: FC<ApplyToStartupModalProps> = ({
             />
           </div>
 
+          </>)}
+
           {/* Resume / CV Document Section */}
+          {!isInvestor && (
           <div className="space-y-2 p-4 rounded-2xl bg-slate-50 border border-slate-200">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
@@ -672,6 +742,7 @@ export const ApplyToStartupModal: FC<ApplyToStartupModalProps> = ({
               </div>
             )}
           </div>
+          )}
 
           {/* Action Buttons */}
           <div className="pt-4 border-t border-slate-100 flex items-center justify-between">

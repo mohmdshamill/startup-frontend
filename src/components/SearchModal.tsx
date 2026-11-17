@@ -13,18 +13,14 @@ export const SearchModal: FC<SearchModalProps> = ({ isOpen, onClose, onSelectIte
   if (!isOpen) return null
 
   const SEARCH_ITEMS = [
-    { title: 'Early Stage Innovation Grant', type: 'Program', category: 'Funding', link: 'programs-section' },
-    { title: 'Incubation & Acceleration', type: 'Program', category: 'Support', link: 'programs-section' },
-    { title: 'Coworking Spaces (LEAP)', type: 'Program', category: 'Infrastructure', link: 'programs-section' },
-    { title: 'Market Expansion Support', type: 'Program', category: 'Global Scale', link: 'programs-section' },
-    { title: 'Superbryn Voice AI', type: 'Startup', category: 'Enterprise AI', link: 'startups-section' },
-    { title: 'Navalt Solar Electric Boats', type: 'Startup', category: 'Clean Mobility', link: 'startups-section' },
-    { title: 'EyeROV Underwater Robotics', type: 'Startup', category: 'Defense & Marine', link: 'startups-section' },
-    { title: 'NetraSemi Edge Silicon', type: 'Startup', category: 'Semiconductor', link: 'startups-section' },
-    { title: 'Aerospace and Defense Verticals', type: 'Sector', category: 'DeepTech', link: 'sector-section' },
-    { title: 'Agriculture & Life Sciences', type: 'Sector', category: 'BioTech', link: 'sector-section' },
-    { title: 'Banking & FinTech', type: 'Sector', category: 'BFSI', link: 'sector-section' },
-    { title: 'Climate & CleanTech', type: 'Sector', category: 'GreenTech', link: 'sector-section' },
+    { title: 'Register and choose your role', type: 'Program', category: 'How it works', link: 'how-it-works' },
+    { title: 'Post a startup idea', type: 'Program', category: 'How it works', link: 'how-it-works' },
+    { title: 'Apply to join a startup', type: 'Program', category: 'How it works', link: 'how-it-works' },
+    { title: 'Founder dashboard', type: 'Sector', category: 'Roles', link: 'roles-section' },
+    { title: 'Developer / Designer dashboard', type: 'Sector', category: 'Roles', link: 'roles-section' },
+    { title: 'Mentor and Admin access', type: 'Sector', category: 'Roles', link: 'roles-section' },
+    { title: 'Investor dashboard', type: 'Startup', category: 'Investors', link: 'investors-section' },
+    { title: 'Investor application in INR', type: 'Startup', category: 'Investors', link: 'investors-section' },
   ]
 
   const filtered = query.trim()
@@ -47,7 +43,7 @@ export const SearchModal: FC<SearchModalProps> = ({ isOpen, onClose, onSelectIte
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search programs, startups, sectors, or innovation grants..."
+            placeholder="Search how it works, roles, or investors..."
             autoFocus
             className="flex-1 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none"
           />
