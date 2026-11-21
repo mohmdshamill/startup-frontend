@@ -64,24 +64,24 @@ export const Navbar: FC<NavbarProps> = ({
           </button>
 
           <button
-            onClick={() => scrollToSection('startups-section')}
+            onClick={() => scrollToSection('how-it-works')}
             className="transition-colors hover:text-[#0b57d0] cursor-pointer"
           >
-            {language === 'en' ? 'Startups' : 'സ്റ്റാർട്ടപ്പുകൾ'}
+            {language === 'en' ? 'How It Works' : 'പ്രവർത്തനം'}
           </button>
 
           <button
-            onClick={() => scrollToSection('programs-section')}
+            onClick={() => scrollToSection('roles-section')}
             className="transition-colors hover:text-[#0b57d0] cursor-pointer"
           >
-            {language === 'en' ? 'Programs' : 'പദ്ധതികൾ'}
+            {language === 'en' ? 'Roles' : 'റോളുകൾ'}
           </button>
 
           <button
-            onClick={() => scrollToSection('sector-section')}
+            onClick={() => scrollToSection('investors-section')}
             className="transition-colors hover:text-[#0b57d0] cursor-pointer"
           >
-            {language === 'en' ? 'Ecosystem' : 'മേഖലകൾ'}
+            {language === 'en' ? 'Investors' : 'നിക്ഷേപകർ'}
           </button>
 
           <button
@@ -189,6 +189,7 @@ export const Navbar: FC<NavbarProps> = ({
                     </span>
                   </button>
 
+                  {currentUser?.role !== 'INVESTOR' && currentUser?.role !== 'ADMIN' && (
                   <button
                     onClick={() => {
                       onNavigateToWorkspace('matching')
@@ -203,6 +204,7 @@ export const Navbar: FC<NavbarProps> = ({
                         : 'Recommended Startups'}
                     </span>
                   </button>
+                  )}
 
                   <button
                     onClick={() => {
@@ -308,22 +310,22 @@ export const Navbar: FC<NavbarProps> = ({
             Home
           </button>
           <button
-            onClick={() => scrollToSection('startups-section')}
+            onClick={() => scrollToSection('how-it-works')}
             className="block w-full text-left py-2 text-sm font-semibold text-slate-700 hover:text-[#0b57d0]"
           >
-            Startups
+            How It Works
           </button>
           <button
-            onClick={() => scrollToSection('programs-section')}
+            onClick={() => scrollToSection('roles-section')}
             className="block w-full text-left py-2 text-sm font-semibold text-slate-700 hover:text-[#0b57d0]"
           >
-            Programs & Schemes
+            Role-based Dashboards
           </button>
           <button
-            onClick={() => scrollToSection('sector-section')}
+            onClick={() => scrollToSection('investors-section')}
             className="block w-full text-left py-2 text-sm font-semibold text-slate-700 hover:text-[#0b57d0]"
           >
-            Sectoral Insights
+            For Investors
           </button>
           <button
             onClick={onOpenNotifications}

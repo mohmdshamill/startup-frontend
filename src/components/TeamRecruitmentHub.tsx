@@ -25,6 +25,8 @@ export interface ApplicationItem {
   startupIdeaId: string
   candidateId: string
   roleApplied: string
+  investmentAmount?: number
+  currency?: string
   pitchMessage: string
   skills: string[]
   availabilityHoursPerWeek: number
@@ -91,7 +93,7 @@ export const TeamRecruitmentHub: FC<TeamRecruitmentHubProps> = ({
   const isFounder = user?.role === 'FOUNDER' || user?.role === 'ADMIN'
 
   // Determine default tab: if user is FOUNDER or ADMIN, default to 'founder-pipeline', otherwise 'my-applications'
-  const [activeTab, setActiveTab] = useState<'founder-pipeline' | 'my-applications'>(
+  const [activeTab, setActiveTab] = useState<'founder-pipeline' | 'investor-interest' | 'my-applications'>(
     isFounder ? 'founder-pipeline' : 'my-applications'
   )
 
@@ -106,6 +108,7 @@ export const TeamRecruitmentHub: FC<TeamRecruitmentHubProps> = ({
     rejected: 0,
   })
   const [candidateApplications, setCandidateApplications] = useState<ApplicationItem[]>([])
+  const [investorInterest, setInvestorInterest] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -154,7 +157,7 @@ export const TeamRecruitmentHub: FC<TeamRecruitmentHubProps> = ({
   const fetchCandidateData = async () => {
     if (!token) return
     try {
-      const res = await fetch('http://localhost:5000/api/applications/my-applications', {
+      const res = await fetch(`http://localhost:5000/api/applications/${user?.role === 'INVESTOR' ? 'investor/' : ''}my-applications`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       const data = await res.json()
@@ -166,12 +169,41 @@ export const TeamRecruitmentHub: FC<TeamRecruitmentHubProps> = ({
     }
   }
 
+  const fetchInvestorInterest = async () => {
+    if (!token || !isFounder) return
+    try {
+      const res = await fetch('http://localhost:5000/api/applications/investor/founder/all', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (res.ok) setInvestorInterest(data.applications || [])
+    } catch (err) {
+      console.error('Error fetching investor applications:', err)
+    }
+  }
+
+  const updateInvestorStatus = async (id: string, status: string) => {
+    const founderFeedback = status === 'REJECTED' ? window.prompt('Optional note to the investor:') ?? undefined : undefined
+    try {
+      const res = await fetch(`http://localhost:5000/api/applications/investor/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status, founderFeedback }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to update')
+      await fetchInvestorInterest()
+    } catch (err: any) {
+      alert(err.message || 'Failed to update investor application.')
+    }
+  }
+
   const loadAllData = async () => {
     setLoading(true)
     setError(null)
     try {
       if (isFounder) {
-        await Promise.all([fetchFounderData(), fetchCandidateData()])
+        await Promise.all([fetchFounderData(), fetchCandidateData(), fetchInvestorInterest()])
       } else {
         await fetchCandidateData()
       }
@@ -225,7 +257,7 @@ export const TeamRecruitmentHub: FC<TeamRecruitmentHubProps> = ({
     if (!window.confirm('Are you sure you want to withdraw this application?')) return
 
     try {
-      const res = await fetch(`http://localhost:5000/api/applications/${appId}/withdraw`, {
+      const res = await fetch(`http://localhost:5000/api/applications/${user?.role === 'INVESTOR' ? 'investor/' : ''}${appId}/withdraw`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -396,6 +428,23 @@ export const TeamRecruitmentHub: FC<TeamRecruitmentHubProps> = ({
             </button>
           )}
 
+          {isFounder && (
+            <button
+              onClick={() => {
+                setActiveTab('investor-interest')
+                setStatusFilter('all')
+              }}
+              className={`px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'investor-interest'
+                  ? 'bg-white text-[#0b57d0] shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span>💼</span>
+              <span>Investor Applications ({investorInterest.length})</span>
+            </button>
+          )}
+
           <button
             onClick={() => {
               setActiveTab('my-applications')
@@ -432,6 +481,88 @@ export const TeamRecruitmentHub: FC<TeamRecruitmentHubProps> = ({
       {/* ========================================================================= */}
       {/* TAB 1: FOUNDER RECRUITMENT PIPELINE                                      */}
       {/* ========================================================================= */}
+      {isFounder && activeTab === 'investor-interest' && (
+        <div className="space-y-4">
+          {investorInterest.filter((a) => {
+            const q = searchQuery.trim().toLowerCase()
+            return !q || a.investor?.name?.toLowerCase().includes(q) || a.startupIdea?.title?.toLowerCase().includes(q)
+          }).length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm space-y-2">
+              <span className="text-4xl">💼</span>
+              <h3 className="text-base font-extrabold text-slate-900">No Investor Applications Yet</h3>
+              <p className="text-xs text-slate-500">Investors who apply to your startups will appear here.</p>
+            </div>
+          ) : (
+            investorInterest
+              .filter((a) => {
+                const q = searchQuery.trim().toLowerCase()
+                return !q || a.investor?.name?.toLowerCase().includes(q) || a.startupIdea?.title?.toLowerCase().includes(q)
+              })
+              .map((a) => (
+                <div key={a.id} className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-lg space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <h3 className="text-lg font-black text-slate-900">{a.investor?.name}</h3>
+                      <p className="text-xs text-slate-500 font-medium">
+                        {a.investor?.email}
+                        {a.investor?.phone ? ` • ${a.investor.phone}` : ''}
+                        {a.investor?.location ? ` • ${a.investor.location}` : ''}
+                      </p>
+                      <p className="text-xs text-slate-600">
+                        Startup: <strong>{a.startupIdea?.title}</strong> • Applied on {new Date(a.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex flex-col sm:items-end gap-2">
+                      {getStatusBadge(a.status)}
+                      <span className="px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-200 text-sm">
+                        ₹ {Number(a.investmentAmount).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs text-slate-700">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">
+                      Why they want to join
+                    </span>
+                    <p className="italic">"{a.pitchMessage}"</p>
+                  </div>
+
+                  {a.founderFeedback && (
+                    <p className="text-xs text-slate-600">
+                      <strong>Your note:</strong> {a.founderFeedback}
+                    </p>
+                  )}
+
+                  {a.status !== 'WITHDRAWN' && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {a.status !== 'REVIEWING' && a.status !== 'ACCEPTED' && (
+                        <button onClick={() => updateInvestorStatus(a.id, 'REVIEWING')} className="px-3.5 py-1.5 rounded-xl bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-bold cursor-pointer">
+                          Mark In Review
+                        </button>
+                      )}
+                      {a.status !== 'SHORTLISTED' && a.status !== 'ACCEPTED' && (
+                        <button onClick={() => updateInvestorStatus(a.id, 'SHORTLISTED')} className="px-3.5 py-1.5 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 text-xs font-bold cursor-pointer">
+                          Shortlist
+                        </button>
+                      )}
+                      {a.status !== 'ACCEPTED' && (
+                        <button onClick={() => updateInvestorStatus(a.id, 'ACCEPTED')} className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-bold cursor-pointer">
+                          Accept
+                        </button>
+                      )}
+                      {a.status !== 'REJECTED' && a.status !== 'ACCEPTED' && (
+                        <button onClick={() => updateInvestorStatus(a.id, 'REJECTED')} className="px-3.5 py-1.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-bold cursor-pointer">
+                          Reject
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+          )}
+        </div>
+      )}
+
       {isFounder && activeTab === 'founder-pipeline' && (
         <div className="space-y-6">
           
@@ -649,7 +780,7 @@ export const TeamRecruitmentHub: FC<TeamRecruitmentHubProps> = ({
                     <div className="flex items-center gap-2">
                       {(app.resumeUrl || app.candidate?.resumeUrl) && (
                         <a
-                          href={app.resumeUrl || app.candidate?.resumeUrl}
+                          href={app.resumeUrl || app.candidate?.resumeUrl || undefined}
                           target="_blank"
                           rel="noreferrer"
                           download={
@@ -778,14 +909,23 @@ export const TeamRecruitmentHub: FC<TeamRecruitmentHubProps> = ({
                         <span>Applied on {new Date(app.createdAt).toLocaleDateString()}</span>
                       </p>
 
-                      <div className="pt-1 flex items-center gap-2 text-xs">
-                        <span className="font-bold text-slate-700">Position Applied:</span>
-                        <span className="px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 font-extrabold border border-indigo-200">
-                          {app.roleApplied}
-                        </span>
-                        <span className="text-slate-400">•</span>
-                        <span className="text-slate-600 font-semibold">{app.availabilityHoursPerWeek} hrs/week committed</span>
-                      </div>
+                      {user?.role === 'INVESTOR' ? (
+                        <div className="pt-1 flex items-center gap-2 text-xs">
+                          <span className="font-bold text-slate-700">Investing Amount:</span>
+                          <span className="px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-200">
+                            ₹ {Number(app.investmentAmount ?? 0).toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="pt-1 flex items-center gap-2 text-xs">
+                          <span className="font-bold text-slate-700">Position Applied:</span>
+                          <span className="px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 font-extrabold border border-indigo-200">
+                            {app.roleApplied}
+                          </span>
+                          <span className="text-slate-400">•</span>
+                          <span className="text-slate-600 font-semibold">{app.availabilityHoursPerWeek} hrs/week committed</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-col sm:items-end gap-2 shrink-0">
@@ -1026,7 +1166,7 @@ export const TeamRecruitmentHub: FC<TeamRecruitmentHubProps> = ({
                   <div className="flex flex-wrap items-center gap-2 mt-2">
                     {(selectedCandidateDetail.resumeUrl || selectedCandidateDetail.candidate?.resumeUrl) && (
                       <a
-                        href={selectedCandidateDetail.resumeUrl || selectedCandidateDetail.candidate?.resumeUrl}
+                        href={selectedCandidateDetail.resumeUrl || selectedCandidateDetail.candidate?.resumeUrl || undefined}
                         target="_blank"
                         rel="noreferrer"
                         download={
